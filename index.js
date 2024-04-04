@@ -31,7 +31,7 @@ async function main() {
 
   program.parse(process.argv);
 
-  const options = program.opts();
+  console.log("Loading Data...");
 
   const gitStagedCmd = spawn("git", ["diff", "--staged"]);
 
