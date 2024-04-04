@@ -44,7 +44,7 @@ async function main() {
       {
         role: "system",
         content:
-          "You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. Returns the response in json string format with the title and description keys. Never user markdown in answers.",
+          "You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. Returns the response in JSON string format with the title and description keys. Ensure that the response adheres strictly to JSON formatting, for example: {'title': 'Title goes here', 'description': 'Description goes here'}. This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.",
       },
       { role: "user", content: gitStagedOutput },
     ],
@@ -72,7 +72,7 @@ async function main() {
 
   console.info("Committing Message...");
 
-  const psCommit = spawn("git", ["commit", "-m", `"${commitMsg}"`]);
+  const psCommit = spawn("git", ["commit", "-m", `${commitMsg}`]);
 
   psCommit.stdin.write(commitMsg);
   psCommit.stdin.end();
