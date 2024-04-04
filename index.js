@@ -35,83 +35,44 @@ async function main() {
 
   const gitStagedCmd = spawn("git", ["diff", "--staged"]);
 
-  console.log("gitStagedOutput");
-
   const gitStagedOutput = await new Promise((resolve) =>
-    gitStagedCmd.stdout.on("data", (data) => {
-      console.log(data.toString());
-      resolve(data.toString());
-    })
+    gitStagedCmd.stdout.on("data", (data) => resolve(data.toString()))
   );
-
-  console.log(gitStagedOutput);
-
-  gitStagedCmd.on("close", (code) => {
-    if (code !== 0) {
-      console.error(
-        "There are no staged files to commit.\nTry running `git add` to stage some files."
-      );
-      process.exit(1);
-    }
-  });
-
-  const isRepoCmd = spawn("git", ["rev-parse", "--is-inside-work-tree"]);
-  let isRepo = "";
-
-  isRepoCmd.stdout.on("data", (data) => {
-    isRepo += data.toString();
-  });
-
-  isRepoCmd.on("close", (code) => {
-    if (code !== 0 || isRepo.trim() !== "true") {
-      console.error(
-        "It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`."
-      );
-      process.exit(1);
-    }
-  });
 
   const chatCompletion = await openai.chat.completions.create({
     messages: [
       {
         role: "system",
         content:
-          "You are an experienced programmer who writes great commit messages. Creates a commit with the given title and a description.",
+          "You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. Returns the response in json string format with the title and description keys. Never user markdown in answers.",
       },
-      { role: "user", content: "Hello, Free GPT !" },
+      { role: "user", content: gitStagedOutput },
     ],
-    model: "gpt-3.5-turbo",
   });
-  console.log(chatCompletion.choices[0].message.content);
 
-  const commitMsg = ""; // Your logic to generate commit message here
+  const commitMsgJson = JSON.parse(chatCompletion.choices[0].message.content);
 
-  if (options["dry-run"]) {
-    console.info(commitMsg);
-    process.exit(0);
-  } else {
-    console.info(
-      `Proposed Commit:\n------------------------------\n${commitMsg}\n------------------------------`
-    );
+  const commitMsg = commitMsgJson.title + "\n\n" + commitMsgJson.description;
 
-    if (!options.force) {
-      rl.question("Do you want to continue? (Y/n)", (answer) => {
-        if (answer.toLowerCase() === "n") {
-          console.error("Commit aborted by user.");
-          process.exit(1);
-        }
-        console.info("Committing Message...");
-        rl.close();
-      });
-    }
+  console.info(
+    `Proposed Commit:\n------------------------------\n${commitMsg}\n------------------------------`
+  );
+
+  const answer = await new Promise((resolve) =>
+    rl.question("Do you want to continue? (Y/n)", (_answer) => {
+      rl.close();
+      resolve(_answer);
+    })
+  );
+
+  if (answer.toLowerCase() === "n") {
+    console.error("Commit aborted by user.");
+    process.exit(1);
   }
 
-  const psCommit = spawn("git", [
-    "commit",
-    ...(options.review ? ["-e"] : []),
-    "-F",
-    "-",
-  ]);
+  console.info("Committing Message...");
+
+  const psCommit = spawn("git", ["commit", "-m", `"${commitMsg}"`]);
 
   psCommit.stdin.write(commitMsg);
   psCommit.stdin.end();
