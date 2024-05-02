@@ -1,9 +1,18 @@
 const { Command } = require("commander");
 const { spawn } = require("child_process");
 const readline = require("readline");
-const FreeGPT3 = require("freegptjs");
+const { main: chatGpt } = require("./chat-gpt");
 
-const openai = new FreeGPT3();
+function getJson(content) {
+  try {
+    return JSON.parse(content);
+  } catch (_) {
+    return null;
+  }
+}
+
+// const prompt = `You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. The description should not be bigget than 2 sentences. Returns the response replacing title and description in following terminal command: gcmsg "{{title}}" -m "{{description}}". This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.`;
+const prompt = `You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. Returns the response in JSON string format with the title and description keys. Ensure that the response adheres strictly to JSON formatting, for example: {'title': 'Title goes here', 'description': 'Description goes here'}. This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.`;
 
 async function main() {
   const rl = readline.createInterface({
@@ -31,7 +40,7 @@ async function main() {
 
   program.parse(process.argv);
 
-  console.log("Loading Data...");
+  // console.log("Loading Data...");
 
   const gitStagedCmd = spawn("git", ["diff", "--staged"]);
 
@@ -39,18 +48,25 @@ async function main() {
     gitStagedCmd.stdout.on("data", (data) => resolve(data.toString()))
   );
 
-  const chatCompletion = await openai.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. Returns the response in JSON string format with the title and description keys. Ensure that the response adheres strictly to JSON formatting, for example: {'title': 'Title goes here', 'description': 'Description goes here'}. This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.",
-      },
-      { role: "user", content: gitStagedOutput },
-    ],
+  // console.log(prompt + "\n\n" + gitStagedOutput);
+  // process.exit(0);
+
+  const chatCompletion = await chatGpt({
+    messages: [{ role: "user", content: prompt + "\n\n" + gitStagedOutput }],
   });
 
-  const commitMsgJson = JSON.parse(chatCompletion.choices[0].message.content);
+  const commitMsgJson = await getJson(
+    chatCompletion.choices[0].message.content
+  );
+
+  // console.log(chatCompletion.choices[0]);
+
+  // console.log(prompt + "\r\n" + gitStagedOutput);
+
+  if (!commitMsgJson) {
+    console.error("Error parsing Chat GPT response");
+    process.exit(0);
+  }
 
   const commitMsg = commitMsgJson.title + "\n\n" + commitMsgJson.description;
 
