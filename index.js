@@ -12,7 +12,7 @@ function getJson(content) {
 }
 
 // const prompt = `You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. The description should not be bigget than 2 sentences. Returns the response replacing title and description in following terminal command: gcmsg "{{title}}" -m "{{description}}". This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.`;
-const prompt = `You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. Returns the response in JSON string format with the title and description keys. Ensure that the response adheres strictly to JSON formatting, for example: {'title': 'Title goes here', 'description': 'Description goes here'}. This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.`;
+const prompt = `You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. The description should not be bigget than 2 sentences. Returns the response in JSON string format with the title and description keys. Ensure that the response adheres strictly to JSON formatting, for example: {'title': 'Title goes here', 'description': 'Description goes here'}. Return JSON as a JSON string, like the result of JSON.stringify. Do not apply any other format.This format is crucial for consistency and compatibility with downstream processes. Please NEVER use markdown in answers.`;
 
 async function main() {
   const rl = readline.createInterface({
@@ -64,6 +64,7 @@ async function main() {
   // console.log(prompt + "\r\n" + gitStagedOutput);
 
   if (!commitMsgJson) {
+    console.log(chatCompletion.choices[0]);
     console.error("Error parsing Chat GPT response");
     process.exit(0);
   }
