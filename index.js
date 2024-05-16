@@ -3,11 +3,22 @@ const { spawn } = require("child_process");
 const readline = require("readline");
 const { main: chatGpt } = require("./chat-gpt");
 
+function markdownToJson(content) {
+  if (content.includes("```json")) {
+    try {
+      return JSON.parse(
+        content.replace("```json", "").replace("```", "").trim()
+      );
+    } catch (_) {}
+  }
+  return null;
+}
+
 function getJson(content) {
   try {
     return JSON.parse(content);
   } catch (_) {
-    return null;
+    return markdownToJson(content);
   }
 }
 
