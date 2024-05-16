@@ -6,7 +6,7 @@ const { encode } = require("gpt-3-encoder");
 const userAgent =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36";
 
-const newSessionRetries = 5;
+const newSessionRetries = 3;
 
 const baseUrl = "https://chat.openai.com";
 
@@ -26,7 +26,7 @@ async function getNewSession(retries = 0) {
     session.deviceId = newDeviceId;
     return session;
   } catch (error) {
-    await wait(500);
+    await wait(1000);
     return retries < newSessionRetries ? getNewSession(retries + 1) : null;
   }
 }
