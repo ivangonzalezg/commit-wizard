@@ -49,14 +49,18 @@ async function main() {
 
   const options = program.opts();
 
-  // console.log("Loading Data...");
-
   const gitStagedCmd = spawn("git", ["diff", "--staged"]);
 
+  let gitDiffOutput = "";
+
+  gitStagedCmd.stdout.on("data", (data) => {
+    gitDiffOutput += data.toString();
+  });
+
   const gitStagedOutput = await Promise.race([
-    new Promise((resolve) => setTimeout(resolve, 2000, "")),
+    new Promise((resolve) => setTimeout(resolve, 10000, "")),
     new Promise((resolve) =>
-      gitStagedCmd.stdout.on("data", (data) => resolve(data.toString()))
+      gitStagedCmd.stdout.on("end", () => resolve(gitDiffOutput))
     ),
   ]);
 
@@ -79,7 +83,6 @@ async function main() {
   );
 
   if (!commitMsgJson) {
-    console.log(chatCompletion.choices[0].message.content);
     console.error("Error parsing Chat GPT response");
     process.exit(0);
   }
