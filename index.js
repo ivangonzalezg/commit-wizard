@@ -45,6 +45,11 @@ async function main() {
 
   program.option("-p, --prompt", "Include the prompt in the result.");
 
+  program.option(
+    "-m, --message <message>",
+    "Custom message to include in the prompt."
+  );
+
   program.parse(process.argv);
 
   const options = program.opts();
@@ -69,12 +74,23 @@ async function main() {
   }
 
   if (options.prompt) {
-    console.log(promptCommand + "\n\n" + gitStagedOutput);
+    console.log(
+      [promptCommand, options.message, gitStagedOutput]
+        .filter(Boolean)
+        .join("\n\n")
+    );
     process.exit(0);
   }
 
   const chatCompletion = await client.chat.completions.create({
-    messages: [{ role: "user", content: prompt + "\n\n" + gitStagedOutput }],
+    messages: [
+      {
+        role: "user",
+        content: [prompt, options.message, gitStagedOutput]
+          .filter(Boolean)
+          .join("\n\n"),
+      },
+    ],
     model: "gpt-4o-mini",
   });
 
