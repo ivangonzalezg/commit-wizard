@@ -4,8 +4,7 @@ const readline = require("readline");
 const OpenAI = require("openai");
 
 const client = new OpenAI({
-  apiKey:
-    "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",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 function markdownToJson(content) {
