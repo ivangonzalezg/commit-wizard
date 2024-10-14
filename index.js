@@ -173,6 +173,7 @@ async function main() {
       throw new Error("There was an error when creating the commit.");
     }
     console.info("Commit created successfully.");
+    process.exit();
   });
 }
 
