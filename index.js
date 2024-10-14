@@ -2,12 +2,19 @@ const { Command } = require("commander");
 const { spawn } = require("child_process");
 const readline = require("readline");
 const OpenAI = require("openai");
-const { version } = require("./package.json");
+const { name, description, version } = require("./package.json");
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error(
     "The OpenAI API key (OPENAI_API_KEY) is not defined. Please set it in your environment variables."
   );
+}
+
+function getName() {
+  return name
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 const client = new OpenAI({
@@ -62,9 +69,9 @@ async function main() {
   const program = new Command();
 
   program
-    .name("Smart Commit")
+    .name(getName())
     .version(version)
-    .description("Automagically generate commit messages.")
+    .description(description)
     .option("-p, --prompt", "Include the prompt in the result.")
     .option(
       "-m, --message <message>",
