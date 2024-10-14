@@ -2,6 +2,7 @@ const { Command } = require("commander");
 const { spawn } = require("child_process");
 const readline = require("readline");
 const OpenAI = require("openai");
+const { version } = require("./package.json");
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error(
@@ -62,7 +63,7 @@ async function main() {
 
   program
     .name("Smart Commit")
-    .version("1.0.0")
+    .version(version)
     .description("Automagically generate commit messages.")
     .option("-p, --prompt", "Include the prompt in the result.")
     .option(

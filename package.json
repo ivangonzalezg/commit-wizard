@@ -1,8 +1,15 @@
 {
-  "name": "smart-commit",
+  "name": "commit-wizard",
   "version": "1.0.0",
+  "description": "Automagically generate commit messages using OpenAI.",
   "main": "index.js",
   "license": "MIT",
+  "bin": {
+    "commit-wizard": "./index.js"
+  },
+  "scripts": {
+    "start": "node ."
+  },
   "dependencies": {
     "commander": "^12.0.0",
     "freegptjs": "^0.0.2",
@@ -11,5 +18,37 @@
     "openai": "4.57.0",
     "readline": "^1.3.0",
     "util": "^0.12.5"
+  },
+  "keywords": [
+    "git",
+    "commit",
+    "openai",
+    "automation",
+    "cli",
+    "commit-wizard",
+    "commit-message"
+  ],
+  "author": {
+    "name": "Ivan Gonzalez",
+    "email": "contacto@ivangonzalez.co",
+    "url": "https://ivangonzalez.co"
+  },
+  "maintainers": [
+    {
+      "name": "Ivan Gonzalezz",
+      "email": "contacto@ivangonzalez.co",
+      "url": "https://ivangonzalez.co/"
+    }
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "homepage": "https://github.com/ivangonzalezg/commit-wizard#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivangonzalezg/commit-wizard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ivangonzalezg/commit-wizard/issues"
   }
 }
