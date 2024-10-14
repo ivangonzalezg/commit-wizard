@@ -52,11 +52,6 @@ const promptCommand = `You're an experienced programmer known for your precise c
 const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history. Return the response in strict JSON format with two keys: 'title' for the commit title and 'description' for the commit description. Example format: {'title': 'Title goes here', 'description': 'Description goes here'}.`;
 
 async function main() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
   const program = new Command();
 
   program
@@ -134,6 +129,11 @@ async function main() {
   console.info(
     `Proposed Commit:\n------------------------------\n${commitMsg}\n------------------------------`
   );
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
 
   const answer = await new Promise((resolve) =>
     rl.question("Do you want to continue? (Y/n)", (_answer) => {
