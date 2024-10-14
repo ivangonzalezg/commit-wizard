@@ -9,7 +9,9 @@
 - ✨ **AI-powered**: Uses OpenAI to generate meaningful commit messages based on your staged changes.
 - 💻 **CLI tool**: Simple command-line interface for fast and efficient workflow.
 - 📋 **Consistent formatting**: Ensures your commit history follows best practices.
-- 🎯 **Customizable**: Exclude files or customize the prompt for tailored commit messages.
+- 🎯 **Customizable prompts**: Option to print the prompt without sending it to the AI, giving you full control over the commit message generation process.
+- 📝 **Custom messages**: Add a custom message to include in the AI-generated prompt, allowing for more personalized commit messages.
+- 🗂 **Exclude files**: Easily exclude specific files from being considered when generating the commit message.
 
 ---
 

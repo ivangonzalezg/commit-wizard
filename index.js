@@ -71,16 +71,16 @@ async function main() {
 
   program
     .name(getName())
-    .version(version)
+    .version(version, "-v, --version")
     .description(description)
-    .option("-p, --prompt", "Include the prompt in the result.")
+    .option("-p, --prompt", "print the prompt without sending it to OpenAI")
     .option(
       "-m, --message <message>",
-      "Custom message to include in the prompt."
+      "custom message to include in the prompt"
     )
     .option(
       "-e, --exclude <message>",
-      "Exclude files (comma separated values)"
+      "exclude files (comma separated values)"
     );
 
   program.parse(process.argv);
