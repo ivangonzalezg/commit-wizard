@@ -1,6 +1,6 @@
 {
   "name": "commit-wizard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automagically generate commit messages using OpenAI.",
   "main": "index.js",
   "license": "MIT",
