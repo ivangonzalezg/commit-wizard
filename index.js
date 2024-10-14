@@ -26,7 +26,23 @@ function getJson(content) {
   }
 }
 
+async function runCommand(command, timeout = 10000) {
+  const commandCmd = spawn(...command);
+  let commandOutput = "";
+  commandCmd.stdout.on("data", (data) => {
+    commandOutput += data.toString();
+  });
+  const output = await Promise.race([
+    new Promise((resolve) => setTimeout(resolve, timeout, "")),
+    new Promise((resolve) =>
+      commandCmd.stdout.on("end", () => resolve(commandOutput))
+    ),
+  ]);
+  return output;
+}
+
 const promptCommand = `You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. The description should not be bigget than 2 sentences. Returns the response replacing title and description in following terminal command: gcmsg "{{title}}" -m "{{description}}". This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.`;
+
 const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history. Return the response in strict JSON format with two keys: 'title' for the commit title and 'description' for the commit description. Example format: {'title': 'Title goes here', 'description': 'Description goes here'}.`;
 
 async function main() {
@@ -53,20 +69,7 @@ async function main() {
 
   const options = program.opts();
 
-  const gitStagedCmd = spawn("git", ["diff", "--staged"]);
-
-  let gitDiffOutput = "";
-
-  gitStagedCmd.stdout.on("data", (data) => {
-    gitDiffOutput += data.toString();
-  });
-
-  const gitStagedOutput = await Promise.race([
-    new Promise((resolve) => setTimeout(resolve, 10000, "")),
-    new Promise((resolve) =>
-      gitStagedCmd.stdout.on("end", () => resolve(gitDiffOutput))
-    ),
-  ]);
+  const gitStagedOutput = await runCommand(["git", ["diff", "--staged"]]);
 
   if (!gitStagedOutput) {
     process.exit(1);
