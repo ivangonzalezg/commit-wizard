@@ -8,12 +8,13 @@ const client = new OpenAI({
 });
 
 function markdownToJson(content) {
-  if (content.includes("```json")) {
+  const match = content.match(/```json\s*([\s\S]*?)\s*```/);
+  if (match) {
     try {
-      return JSON.parse(
-        content.replace("```json", "").replace("```", "").trim()
-      );
-    } catch (_) {}
+      return JSON.parse(match[1]);
+    } catch (_) {
+      return null;
+    }
   }
   return null;
 }
