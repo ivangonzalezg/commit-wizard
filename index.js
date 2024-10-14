@@ -65,11 +65,32 @@ async function main() {
     "Custom message to include in the prompt."
   );
 
+  program.option(
+    "-e, --exclude <message>",
+    "Exclude files (comma separated values)"
+  );
+
   program.parse(process.argv);
 
   const options = program.opts();
 
-  const gitStagedOutput = await runCommand(["git", ["diff", "--staged"]]);
+  const excludedFiles = options.exclude ? options.exclude.split(",") : [];
+
+  const files = await runCommand(["git", ["diff", "--staged", "--name-only"]]);
+
+  const stagedFiles = files
+    .split("\n")
+    .filter(Boolean)
+    .filter((file) => !excludedFiles.includes(file));
+
+  if (!stagedFiles.length) {
+    process.exit(1);
+  }
+
+  const gitStagedOutput = await runCommand([
+    "git",
+    ["diff", "--staged", ...stagedFiles],
+  ]);
 
   if (!gitStagedOutput) {
     process.exit(1);
