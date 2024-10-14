@@ -62,19 +62,16 @@ async function main() {
   program
     .name("Smart Commit")
     .version("1.0.0")
-    .description("Automagically generate commit messages.");
-
-  program.option("-p, --prompt", "Include the prompt in the result.");
-
-  program.option(
-    "-m, --message <message>",
-    "Custom message to include in the prompt."
-  );
-
-  program.option(
-    "-e, --exclude <message>",
-    "Exclude files (comma separated values)"
-  );
+    .description("Automagically generate commit messages.")
+    .option("-p, --prompt", "Include the prompt in the result.")
+    .option(
+      "-m, --message <message>",
+      "Custom message to include in the prompt."
+    )
+    .option(
+      "-e, --exclude <message>",
+      "Exclude files (comma separated values)"
+    );
 
   program.parse(process.argv);
 
