@@ -33,7 +33,12 @@ async function runCommand(command, timeout = 10000) {
     commandOutput += data.toString();
   });
   const output = await Promise.race([
-    new Promise((resolve) => setTimeout(resolve, timeout, "")),
+    new Promise((resolve) =>
+      setTimeout(() => {
+        commandCmd.kill();
+        resolve("");
+      }, timeout)
+    ),
     new Promise((resolve) =>
       commandCmd.stdout.on("end", () => resolve(commandOutput))
     ),
