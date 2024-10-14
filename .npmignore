@@ -1,0 +1,5 @@
+/.github/workflows/deploy.yml
+/node_modules
+/index.ts
+/tsconfig.json
+/yarn.lock

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-const { Command } = require("commander");
-const { spawn } = require("child_process");
-const readline = require("readline");
-const OpenAI = require("openai");
-const { name, description, version } = require("./package.json");
+import { Command } from "commander";
+import { spawn } from "child_process";
+import readline from "readline";
+import OpenAI from "openai";
+import { name, description, version } from "./package.json";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error(
@@ -22,7 +22,7 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-function markdownToJson(content) {
+function markdownToJson(content: string) {
   const match = content.match(/```json\s*([\s\S]*?)\s*```/);
   if (match) {
     try {
@@ -34,7 +34,7 @@ function markdownToJson(content) {
   return null;
 }
 
-function getJson(content) {
+function getJson(content: string) {
   try {
     return JSON.parse(content);
   } catch (_) {
@@ -42,7 +42,10 @@ function getJson(content) {
   }
 }
 
-async function runCommand(command, timeout = 10000) {
+async function runCommand(
+  command: [string, string[]],
+  timeout: number = 10000
+): Promise<string> {
   const commandCmd = spawn(...command);
   let commandOutput = "";
   commandCmd.stdout.on("data", (data) => {
@@ -59,7 +62,7 @@ async function runCommand(command, timeout = 10000) {
       commandCmd.stdout.on("end", () => resolve(commandOutput))
     ),
   ]);
-  return output;
+  return output as string;
 }
 
 const promptCommand = `You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. The description should not be bigger than 2 sentences. Returns the response replacing title and description in following terminal command: git commit -m "{{title}}" -m "{{description}}". This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.`;
@@ -131,7 +134,7 @@ async function main() {
   });
 
   const commitMsgJson = await getJson(
-    chatCompletion.choices[0].message.content
+    chatCompletion.choices[0].message.content || ""
   );
 
   if (!commitMsgJson) {
@@ -149,7 +152,7 @@ async function main() {
     output: process.stdout,
   });
 
-  const answer = await new Promise((resolve) =>
+  const answer = await new Promise<string>((resolve) =>
     rl.question("Do you want to continue? (Y/n)", (_answer) => {
       rl.close();
       resolve(_answer);
