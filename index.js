@@ -82,7 +82,7 @@ async function main() {
     .filter((file) => !excludedFiles.includes(file));
 
   if (!stagedFiles.length) {
-    process.exit(1);
+    throw new Error("No files to diff.");
   }
 
   const gitStagedOutput = await runCommand([
@@ -91,7 +91,7 @@ async function main() {
   ]);
 
   if (!gitStagedOutput) {
-    process.exit(1);
+    throw new Error("No staged changes found.");
   }
 
   if (options.prompt) {
@@ -100,7 +100,7 @@ async function main() {
         .filter(Boolean)
         .join("\n\n")
     );
-    process.exit(0);
+    process.exit();
   }
 
   const chatCompletion = await client.chat.completions.create({
@@ -120,8 +120,7 @@ async function main() {
   );
 
   if (!commitMsgJson) {
-    console.error("Error parsing Chat GPT response");
-    process.exit(0);
+    throw new Error("Error parsing Chat GPT response.");
   }
 
   const commitMsg = commitMsgJson.title + "\n\n" + commitMsgJson.description;
@@ -143,8 +142,7 @@ async function main() {
   );
 
   if (answer.toLowerCase() === "n") {
-    console.error("Commit aborted by user.");
-    process.exit(1);
+    throw new Error("Commit aborted by user.");
   }
 
   console.info("Committing Message...");
@@ -157,12 +155,13 @@ async function main() {
 
   psCommit.on("close", (code) => {
     if (code !== 0) {
-      console.error("There was an error when creating the commit.");
-      process.exit(1);
+      throw new Error("There was an error when creating the commit.");
     }
     console.info("Commit created successfully.");
-    process.exit(0);
   });
 }
 
-main();
+main().catch((error) => {
+  console.error(error.message);
+  process.exit(1);
+});
