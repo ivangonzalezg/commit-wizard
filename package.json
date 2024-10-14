@@ -10,7 +10,8 @@
   },
   "scripts": {
     "start": "ts-node index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "prepare": "husky"
   },
   "dependencies": {
     "commander": "12.0.0",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@types/commander": "2.12.2",
     "@types/node": "22.7.5",
+    "husky": "9.1.6",
     "ts-node": "10.9.2",
     "typescript": "5.6.3"
   },
