@@ -1,5 +1,12 @@
 # 🧙‍♂️ Commit Wizard
 
+![Build Status](https://img.shields.io/github/actions/workflow/status/ivangonzalezg/commit-wizard/deploy.yml?branch=master)
+![npm downloads](https://img.shields.io/npm/dm/commit-wizard)
+![GitHub Release Date](https://img.shields.io/github/release-date/ivangonzalezg/commit-wizard)
+![npm package](https://img.shields.io/npm/v/commit-wizard)
+![NPM License](https://img.shields.io/npm/l/commit-wizard)
+![GitHub Repo stars](https://img.shields.io/github/stars/ivangonzalezg/commit-wizard)
+
 > Automagically generate clear and concise commit messages using OpenAI and Git. Perfect for keeping your Git history clean, organized, and magical! ✨
 
 ![Commit Wizard Screenshot](.github/screenshots/image.png)
