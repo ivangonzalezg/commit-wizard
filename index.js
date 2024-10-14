@@ -3,6 +3,12 @@ const { spawn } = require("child_process");
 const readline = require("readline");
 const OpenAI = require("openai");
 
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error(
+    "The OpenAI API key (OPENAI_API_KEY) is not defined. Please set it in your environment variables."
+  );
+}
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
