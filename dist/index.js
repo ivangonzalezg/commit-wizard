@@ -119,17 +119,18 @@ async function main() {
     if (answer.toLowerCase() === "n") {
         throw new Error("Commit aborted by user.");
     }
-    console.info("Committing Message...");
-    const psCommit = (0, child_process_1.spawn)("git", ["commit", "-m", `${commitMsg}`]);
-    psCommit.stdin.write(commitMsg);
-    psCommit.stdin.end();
-    psCommit.on("close", (code) => {
-        if (code !== 0) {
-            throw new Error("There was an error when creating the commit.");
-        }
-        console.info("Commit created successfully.");
-        process.exit();
+    console.info("Committing message...");
+    const psCommit = (0, child_process_1.spawn)("git", ["commit", "-m", `${commitMsg}`], {
+        stdio: "inherit",
     });
+    const result = await new Promise((resolve, reject) => psCommit.on("close", (code) => {
+        if (code !== 0) {
+            reject(new Error("There was an error when creating the commit."));
+        }
+        resolve("Commit created successfully.");
+    }));
+    console.info(result);
+    process.exit();
 }
 main().catch((error) => {
     console.error(error.message);
