@@ -3,3 +3,5 @@
 /index.ts
 /tsconfig.json
 /yarn.lock
+/.github
+/.husky
