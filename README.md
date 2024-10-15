@@ -38,6 +38,58 @@ npx commit-wizard
 
 ---
 
+## 🔑 API Key Setup
+
+To use Commit Wizard, you will need to set up your OpenAI API key. This is required to enable AI-powered commit message generation.
+
+1. **Obtain your OpenAI API key**:
+
+   - Go to the [OpenAI platform](https://platform.openai.com/signup) and sign up or log in.
+   - Navigate to the API section and create a new API key.
+
+2. **Set your API key as an environment variable**:
+   Add the API key to your environment by setting the `OPENAI_API_KEY` variable:
+
+   ```bash
+   export OPENAI_API_KEY="your-api-key-here"
+   ```
+
+   Or, you can add it to your `.bashrc`, `.zshrc`, or other shell configuration files to automatically set it for future sessions.
+
+### Add API Key to Your Shell Configuration (Optional)
+
+To avoid having to set the API key manually each time, you can add it to your shell configuration file:
+
+1. **For Bash users**:
+   Open your `.bashrc` file and add the following line:
+
+   ```bash
+   echo 'export OPENAI_API_KEY="your-api-key-here"' >> ~/.bashrc
+   ```
+
+   Then, apply the changes:
+
+   ```bash
+   source ~/.bashrc
+   ```
+
+2. **For Zsh users**:
+   Open your `.zshrc` file and add the following line:
+
+   ```bash
+   echo 'export OPENAI_API_KEY="your-api-key-here"' >> ~/.zshrc
+   ```
+
+   Then, apply the changes:
+
+   ```bash
+   source ~/.zshrc
+   ```
+
+After this, your API key will be set automatically each time you open a new terminal session.
+
+---
+
 ## ⚙️ Usage
 
 Once installed, you can use the tool in any git repository.
