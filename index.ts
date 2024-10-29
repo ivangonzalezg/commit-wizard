@@ -92,10 +92,16 @@ async function main() {
 
   const excludedFiles = options.exclude ? options.exclude.split(",") : [];
 
-  const files = await runCommand(["git", ["diff", "--staged", "--name-only"]]);
+  const files = await runCommand([
+    "git",
+    ["diff", "--staged", "--name-status"],
+  ]);
 
   const stagedFiles = files
     .split("\n")
+    .filter(Boolean)
+    .filter((line) => line && !line.startsWith("D"))
+    .map((line) => line.split("\t")[1])
     .filter(Boolean)
     .filter((file) => !excludedFiles.includes(file));
 
