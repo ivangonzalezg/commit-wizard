@@ -78,7 +78,13 @@ async function main() {
         .split("\n")
         .filter(Boolean)
         .filter((line) => line && !line.startsWith("D"))
-        .map((line) => line.split("\t")[1])
+        .map((line) => {
+        const [status, ...fileParts] = line.split("\t");
+        if (status.startsWith("R")) {
+            return fileParts[1];
+        }
+        return fileParts[0];
+    })
         .filter(Boolean)
         .filter((file) => !excludedFiles.includes(file));
     if (!stagedFiles.length) {
