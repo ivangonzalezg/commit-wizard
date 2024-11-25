@@ -59,16 +59,17 @@ async function runCommand(command, timeout = 10000) {
 const promptCommand = `You're an experienced programmer known for your precise commit messages. Use the output of git diff --staged to create a commit. Provide a clear and concise title, followed by a brief description that outlines the changes made. Once prepared, execute the commit with both the title and description intact. Your commitment to clarity ensures a well-organized development history. The description should not be bigger than 2 sentences. Returns the response replacing title and description in following terminal command: git commit -m "{{title}}" -m "{{description}}". This format is crucial for consistency and compatibility with downstream processes. Please never user markdown in answers.`;
 const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history. Return the response in strict JSON format with two keys: 'title' for the commit title and 'description' for the commit description. Example format: {'title': 'Title goes here', 'description': 'Description goes here'}.`;
 async function main() {
-    const program = new commander_1.Command();
-    program
+    const command = new commander_1.Command();
+    command
         .name(getName())
         .version(package_json_1.version, "-v, --version")
         .description(package_json_1.description)
         .option("-p, --prompt", "print the prompt without sending it to OpenAI")
         .option("-m, --message <message>", "custom message to include in the prompt")
-        .option("-e, --exclude <message>", "exclude files (comma separated values)");
-    program.parse(process.argv);
-    const options = program.opts();
+        .option("-e, --exclude <message>", "exclude files (comma separated values)")
+        .option("-c, --conventional-commits", "enforce commit message format as Conventional Commits");
+    command.parse(process.argv);
+    const options = command.opts();
     const excludedFiles = options.exclude ? options.exclude.split(",") : [];
     const files = await runCommand([
         "git",
@@ -107,7 +108,12 @@ async function main() {
         messages: [
             {
                 role: "user",
-                content: [prompt, options.message, gitStagedOutput]
+                content: [
+                    prompt,
+                    options.conventionalCommits && "Use conventional commits",
+                    options.message,
+                    gitStagedOutput,
+                ]
                     .filter(Boolean)
                     .join("\n\n"),
             },

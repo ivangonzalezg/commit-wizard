@@ -70,9 +70,9 @@ const promptCommand = `You're an experienced programmer known for your precise c
 const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history. Return the response in strict JSON format with two keys: 'title' for the commit title and 'description' for the commit description. Example format: {'title': 'Title goes here', 'description': 'Description goes here'}.`;
 
 async function main() {
-  const program = new Command();
+  const command = new Command();
 
-  program
+  command
     .name(getName())
     .version(version, "-v, --version")
     .description(description)
@@ -81,14 +81,15 @@ async function main() {
       "-m, --message <message>",
       "custom message to include in the prompt"
     )
+    .option("-e, --exclude <message>", "exclude files (comma separated values)")
     .option(
-      "-e, --exclude <message>",
-      "exclude files (comma separated values)"
+      "-c, --conventional-commits",
+      "enforce commit message format as Conventional Commits"
     );
 
-  program.parse(process.argv);
+  command.parse(process.argv);
 
-  const options = program.opts();
+  const options = command.opts();
 
   const excludedFiles = options.exclude ? options.exclude.split(",") : [];
 
@@ -137,7 +138,12 @@ async function main() {
     messages: [
       {
         role: "user",
-        content: [prompt, options.message, gitStagedOutput]
+        content: [
+          prompt,
+          options.conventionalCommits && "Use conventional commits",
+          options.message,
+          gitStagedOutput,
+        ]
           .filter(Boolean)
           .join("\n\n"),
       },
