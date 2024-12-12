@@ -98,26 +98,20 @@ async function main() {
     if (!gitStagedOutput) {
         throw new Error("No staged changes found.");
     }
+    const content = [
+        options.prompt ? promptCommand : prompt,
+        options.conventionalCommits && "Use conventional commits",
+        options.message,
+        gitStagedOutput,
+    ]
+        .filter(Boolean)
+        .join("\n\n");
     if (options.prompt) {
-        console.log([promptCommand, options.message, gitStagedOutput]
-            .filter(Boolean)
-            .join("\n\n"));
+        console.log(content);
         process.exit();
     }
     const chatCompletion = await client.chat.completions.create({
-        messages: [
-            {
-                role: "user",
-                content: [
-                    prompt,
-                    options.conventionalCommits && "Use conventional commits",
-                    options.message,
-                    gitStagedOutput,
-                ]
-                    .filter(Boolean)
-                    .join("\n\n"),
-            },
-        ],
+        messages: [{ role: "user", content: content }],
         model: "gpt-4o-mini",
     });
     const commitMsgJson = await getJson(chatCompletion.choices[0].message.content || "");
