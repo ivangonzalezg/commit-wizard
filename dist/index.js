@@ -56,6 +56,13 @@ async function runCommand(command, timeout = 10000) {
     ]);
     return output;
 }
+function lineToFilePath(line) {
+    const [status, ...fileParts] = line.split("\t");
+    if (status.startsWith("R")) {
+        return fileParts[1];
+    }
+    return fileParts[0];
+}
 const promptCommand = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history.`;
 const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history. Return the response in strict JSON format with two keys: 'title' for the commit title and 'description' for the commit description. Example format: {'title': 'Title goes here', 'description': 'Description goes here'}.`;
 async function main() {
@@ -75,25 +82,21 @@ async function main() {
         "git",
         ["diff", "--staged", "--name-status"],
     ]);
-    const stagedFiles = files
-        .split("\n")
-        .filter(Boolean)
-        .filter((line) => line && !line.startsWith("D"))
-        .map((line) => {
-        const [status, ...fileParts] = line.split("\t");
-        if (status.startsWith("R")) {
-            return fileParts[1];
-        }
-        return fileParts[0];
-    })
-        .filter(Boolean)
-        .filter((file) => !excludedFiles.includes(file));
+    const stagedFiles = files.split("\n").filter(Boolean);
     if (!stagedFiles.length) {
         throw new Error("No files to diff.");
     }
     const gitStagedOutput = await runCommand([
         "git",
-        ["diff", "--staged", ...stagedFiles],
+        [
+            "diff",
+            "--staged",
+            "--",
+            ...stagedFiles
+                .map(lineToFilePath)
+                .filter((file) => !excludedFiles.includes(file))
+                .filter(Boolean),
+        ],
     ]);
     if (!gitStagedOutput) {
         throw new Error("No staged changes found.");
