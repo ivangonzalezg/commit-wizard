@@ -4,6 +4,9 @@ import { spawn } from "child_process";
 import readline from "readline";
 import OpenAI from "openai";
 import { name, description, version } from "./package.json";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
+import { ChatCompletionMessageParam } from "openai/resources";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error(
@@ -22,25 +25,10 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-function markdownToJson(content: string) {
-  const match = content.match(/```json\s*([\s\S]*?)\s*```/);
-  if (match) {
-    try {
-      return JSON.parse(match[1]);
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
-}
-
-function getJson(content: string) {
-  try {
-    return JSON.parse(content);
-  } catch (_) {
-    return markdownToJson(content);
-  }
-}
+const CommitInfo = z.object({
+  title: z.string(),
+  description: z.string(),
+});
 
 async function runCommand(
   command: [string, string[]],
@@ -75,7 +63,7 @@ function lineToFilePath(line: string) {
 
 const promptCommand = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history.`;
 
-const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history. Return the response in strict JSON format with two keys: 'title' for the commit title and 'description' for the commit description. Example format: {'title': 'Title goes here', 'description': 'Description goes here'}.`;
+const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history.`;
 
 async function main() {
   const command = new Command();
@@ -129,26 +117,50 @@ async function main() {
     throw new Error("No staged changes found.");
   }
 
-  const content = [
-    options.prompt ? promptCommand : prompt,
-    options.conventionalCommits && "Use conventional commits",
-    options.message,
-    gitStagedOutput,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-
   if (options.prompt) {
-    console.log(content);
+    console.log(
+      [
+        promptCommand,
+        options.conventionalCommits && "Use conventional commits",
+        gitStagedOutput,
+        options.message,
+      ]
+        .filter(Boolean)
+        .join("\n\n")
+    );
     process.exit();
   }
 
-  const chatCompletion = await client.chat.completions.create({
-    messages: [{ role: "user", content: content }],
-    model: "gpt-4o-mini",
+  const messages: ChatCompletionMessageParam[] = [
+    { role: "system", content: prompt },
+  ];
+
+  if (options.conventionalCommits) {
+    messages.push({
+      role: "system",
+      content: "Using conventional commits",
+    });
+  }
+
+  messages.push({
+    role: "user",
+    content: gitStagedOutput,
   });
 
-  const commitMsgJson = await getJson(
+  if (options.message) {
+    messages.push({
+      role: "user",
+      content: options.message,
+    });
+  }
+
+  const chatCompletion = await client.chat.completions.create({
+    messages,
+    model: "gpt-4o-mini",
+    response_format: zodResponseFormat(CommitInfo, "commit"),
+  });
+
+  const commitMsgJson = await JSON.parse(
     chatCompletion.choices[0].message.content || ""
   );
 

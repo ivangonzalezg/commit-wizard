@@ -9,6 +9,8 @@ const child_process_1 = require("child_process");
 const readline_1 = __importDefault(require("readline"));
 const openai_1 = __importDefault(require("openai"));
 const package_json_1 = require("./package.json");
+const zod_1 = require("openai/helpers/zod");
+const zod_2 = require("zod");
 if (!process.env.OPENAI_API_KEY) {
     throw new Error("The OpenAI API key (OPENAI_API_KEY) is not defined. Please set it in your environment variables.");
 }
@@ -21,26 +23,10 @@ function getName() {
 const client = new openai_1.default({
     apiKey: process.env.OPENAI_API_KEY,
 });
-function markdownToJson(content) {
-    const match = content.match(/```json\s*([\s\S]*?)\s*```/);
-    if (match) {
-        try {
-            return JSON.parse(match[1]);
-        }
-        catch (_) {
-            return null;
-        }
-    }
-    return null;
-}
-function getJson(content) {
-    try {
-        return JSON.parse(content);
-    }
-    catch (_) {
-        return markdownToJson(content);
-    }
-}
+const CommitInfo = zod_2.z.object({
+    title: zod_2.z.string(),
+    description: zod_2.z.string(),
+});
 async function runCommand(command, timeout = 10000) {
     const commandCmd = (0, child_process_1.spawn)(...command);
     let commandOutput = "";
@@ -64,7 +50,7 @@ function lineToFilePath(line) {
     return fileParts[0];
 }
 const promptCommand = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history.`;
-const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history. Return the response in strict JSON format with two keys: 'title' for the commit title and 'description' for the commit description. Example format: {'title': 'Title goes here', 'description': 'Description goes here'}.`;
+const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history.`;
 async function main() {
     const command = new commander_1.Command();
     command
@@ -101,23 +87,42 @@ async function main() {
     if (!gitStagedOutput) {
         throw new Error("No staged changes found.");
     }
-    const content = [
-        options.prompt ? promptCommand : prompt,
-        options.conventionalCommits && "Use conventional commits",
-        options.message,
-        gitStagedOutput,
-    ]
-        .filter(Boolean)
-        .join("\n\n");
     if (options.prompt) {
-        console.log(content);
+        console.log([
+            promptCommand,
+            options.conventionalCommits && "Use conventional commits",
+            gitStagedOutput,
+            options.message,
+        ]
+            .filter(Boolean)
+            .join("\n\n"));
         process.exit();
     }
-    const chatCompletion = await client.chat.completions.create({
-        messages: [{ role: "user", content: content }],
-        model: "gpt-4o-mini",
+    const messages = [
+        { role: "system", content: prompt },
+    ];
+    if (options.conventionalCommits) {
+        messages.push({
+            role: "system",
+            content: "Using conventional commits",
+        });
+    }
+    messages.push({
+        role: "user",
+        content: gitStagedOutput,
     });
-    const commitMsgJson = await getJson(chatCompletion.choices[0].message.content || "");
+    if (options.message) {
+        messages.push({
+            role: "user",
+            content: options.message,
+        });
+    }
+    const chatCompletion = await client.chat.completions.create({
+        messages,
+        model: "gpt-4o-mini",
+        response_format: (0, zod_1.zodResponseFormat)(CommitInfo, "commit"),
+    });
+    const commitMsgJson = await JSON.parse(chatCompletion.choices[0].message.content || "");
     if (!commitMsgJson) {
         throw new Error("Error parsing Chat GPT response.");
     }
