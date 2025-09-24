@@ -107,16 +107,16 @@ async function main() {
             content: "Using conventional commits",
         });
     }
-    messages.push({
-        role: "user",
-        content: gitStagedOutput,
-    });
     if (options.message) {
         messages.push({
             role: "user",
             content: options.message,
         });
     }
+    messages.push({
+        role: "user",
+        content: gitStagedOutput,
+    });
     const chatCompletion = await client.chat.completions.create({
         messages,
         model: "gpt-4o-mini",

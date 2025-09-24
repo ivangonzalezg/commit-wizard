@@ -142,17 +142,17 @@ async function main() {
     });
   }
 
-  messages.push({
-    role: "user",
-    content: gitStagedOutput,
-  });
-
   if (options.message) {
     messages.push({
       role: "user",
       content: options.message,
     });
   }
+
+  messages.push({
+    role: "user",
+    content: gitStagedOutput,
+  });
 
   const chatCompletion = await client.chat.completions.create({
     messages,
