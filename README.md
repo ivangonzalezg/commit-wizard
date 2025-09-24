@@ -7,18 +7,18 @@
 ![NPM License](https://img.shields.io/npm/l/commit-wizard)
 ![GitHub Repo stars](https://img.shields.io/github/stars/ivangonzalezg/commit-wizard)
 
-> Automagically generate clear and concise commit messages using OpenAI and Git. Perfect for keeping your Git history clean, organized, and magical! ✨
+> Automagically generate clear and concise commit messages using your preferred AI provider (Gemini or OpenAI) and Git. Perfect for keeping your Git history clean, organized, and magical! ✨
 
 ![Commit Wizard Screenshot](.github/screenshots/image.png)
 
 ## 🚀 Features
 
-- ✨ **AI-powered**: Uses OpenAI to generate meaningful commit messages based on your staged changes.
-- 💻 **CLI tool**: Simple command-line interface for fast and efficient workflow.
-- 📋 **Consistent formatting**: Ensures your commit history follows best practices.
-- 🎯 **Customizable prompts**: Option to print the prompt without sending it to the AI, giving you full control over the commit message generation process.
-- 📝 **Custom messages**: Add a custom message to include in the AI-generated prompt, allowing for more personalized commit messages.
-- 🗂 **Exclude files**: Easily exclude specific files from being considered when generating the commit message.
+- ✨ **AI-powered**: Generate meaningful commit messages from your staged changes with Google Gemini (default) or OpenAI.
+- ⚙️ **Configurable workflow**: Choose providers, print prompts locally, or add context before contacting an API.
+- 📋 **Consistent formatting**: Optional Conventional Commits enforcement keeps history tidy and predictable.
+- 💻 **CLI tool**: Simple command-line interface that fits into any Git workflow.
+- 📝 **Custom messages**: Inject project-specific instructions directly into the prompt.
+- 🗂 **Exclude files**: Skip changelog noise (lockfiles, docs, etc.) while the tool inspects your diff.
 
 ---
 
@@ -40,53 +40,27 @@ npx commit-wizard
 
 ## 🔑 API Key Setup
 
-To use Commit Wizard, you will need to set up your OpenAI API key. This is required to enable AI-powered commit message generation.
+Commit Wizard talks to third-party LLMs. Set the environment variable that matches the provider you plan to use.
 
-1. **Obtain your OpenAI API key**:
+### Default provider: Gemini
 
-   - Go to the [OpenAI platform](https://platform.openai.com/signup) and sign up or log in.
-   - Navigate to the API section and create a new API key.
-
-2. **Set your API key as an environment variable**:
-   Add the API key to your environment by setting the `OPENAI_API_KEY` variable:
+1. Create a key at the [Google AI Studio](https://aistudio.google.com/).
+2. Export it as `GEMINI_API_KEY` in your shell:
 
    ```bash
-   export OPENAI_API_KEY="your-api-key-here"
+   export GEMINI_API_KEY="your-gemini-api-key"
    ```
 
-   Or, you can add it to your `.bashrc`, `.zshrc`, or other shell configuration files to automatically set it for future sessions.
+### Alternate provider: OpenAI
 
-### Add API Key to Your Shell Configuration (Optional)
-
-To avoid having to set the API key manually each time, you can add it to your shell configuration file:
-
-1. **For Bash users**:
-   Open your `.bashrc` file and add the following line:
+1. Create a key at the [OpenAI platform](https://platform.openai.com/).
+2. Export it as `OPENAI_API_KEY` in your shell:
 
    ```bash
-   echo 'export OPENAI_API_KEY="your-api-key-here"' >> ~/.bashrc
+   export OPENAI_API_KEY="your-openai-api-key"
    ```
 
-   Then, apply the changes:
-
-   ```bash
-   source ~/.bashrc
-   ```
-
-2. **For Zsh users**:
-   Open your `.zshrc` file and add the following line:
-
-   ```bash
-   echo 'export OPENAI_API_KEY="your-api-key-here"' >> ~/.zshrc
-   ```
-
-   Then, apply the changes:
-
-   ```bash
-   source ~/.zshrc
-   ```
-
-After this, your API key will be set automatically each time you open a new terminal session.
+Add the export line to your `.bashrc`, `.zshrc`, or shell profile if you want the variable set automatically for future sessions.
 
 ---
 
@@ -100,7 +74,7 @@ Once installed, you can use the tool in any git repository.
    git add .
    ```
 
-2. **Run Commit Wizard**:
+2. **Run Commit Wizard** (uses Gemini unless you select otherwise):
 
    ```bash
    commit-wizard
@@ -121,17 +95,19 @@ Once installed, you can use the tool in any git repository.
 
 ## 🛠️ Options
 
-- **Custom Prompt**: You can customize the AI prompt by passing the `--message` or `-m` flag.
+- `--dry-run, -d`: Print the composed prompt without calling an AI provider.
+- `--message <text>, -m`: Add extra context for the model (e.g. project goals or tricky areas).
+- `--exclude <files>, -e`: Provide a comma-separated list of files to skip when building the diff.
+- `--conventional-commits, -c`: Ask the model to format the title using the Conventional Commits spec.
+- `--provider <openai|gemini>, -p`: Choose the AI backend. Defaults to `gemini`.
 
-  ```bash
-  commit-wizard --message "Explain what changed in the codebase"
-  ```
+Examples:
 
-- **Exclude Files**: Exclude specific files from the commit message generation.
-
-  ```bash
-  commit-wizard --exclude "README.md"
-  ```
+```bash
+commit-wizard --dry-run --message "Focus on API breaking changes"
+commit-wizard --provider openai --conventional-commits
+commit-wizard --exclude "README.md"
+```
 
 ---
 
