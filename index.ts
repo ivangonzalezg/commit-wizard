@@ -1,31 +1,22 @@
 #!/usr/bin/env node
-import { Command } from "commander";
+import { name, description, version } from "./package.json";
+import { Command, Option } from "commander";
 import { spawn } from "child_process";
 import readline from "readline";
-import OpenAI from "openai";
-import { name, description, version } from "./package.json";
-import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { ChatCompletionMessageParam } from "openai/resources";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { openAIChatCompletion } from "./src/openai";
+import { geminiChatCompletion } from "./src/gemini";
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error(
-    "The OpenAI API key (OPENAI_API_KEY) is not defined. Please set it in your environment variables."
-  );
-}
+const fullName = name
+  .split("-")
+  .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+  .join(" ");
 
-function getName() {
-  return name
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-}
+const defaultExcludedFiles = ["package-lock.json", "yarn.lock"];
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const CommitInfo = z.object({
+const responseObject = z.object({
   title: z.string(),
   description: z.string(),
 });
@@ -61,33 +52,71 @@ function lineToFilePath(line: string) {
   return fileParts[0];
 }
 
-const promptCommand = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history.`;
-
 const prompt = `You're an experienced programmer known for your precise and effective commit messages. Review the output of git diff --staged and create a commit message. The commit should include a clear and concise title that accurately summarizes the purpose of the changes, followed by a brief description that outlines the key updates or modifications made. Ensure the description highlights any new functionality, bug fixes, or refactoring, and is no longer than 2 sentences. The commit message must follow best practices for clarity and relevance to maintain a well-organized project history.`;
 
-async function main() {
-  const command = new Command();
+const conventionalCommitsPrompt =
+  "Format the commit title using the Conventional Commits specification: `type(scope): short imperative description`";
 
-  command
-    .name(getName())
+async function main() {
+  const command = new Command()
+    .name(name)
     .version(version, "-v, --version")
     .description(description)
-    .option("-p, --prompt", "print the prompt without sending it to OpenAI")
-    .option(
-      "-m, --message <message>",
-      "custom message to include in the prompt"
+    .addOption(
+      new Option(
+        "-d, --dry-run",
+        "print the prompt without sending it to provider"
+      )
     )
-    .option("-e, --exclude <message>", "exclude files (comma separated values)")
-    .option(
-      "-c, --conventional-commits",
-      "enforce commit message format as Conventional Commits"
+    .addOption(
+      new Option(
+        "-m, --message <message>",
+        "custom message to include in the prompt"
+      )
+    )
+    .addOption(
+      new Option(
+        "-e, --exclude <files>",
+        "exclude files (comma separated values)"
+      )
+    )
+    .addOption(
+      new Option(
+        "-c, --conventional-commits",
+        "enforce commit message format as Conventional Commits"
+      )
+    )
+    .addOption(
+      new Option(
+        "-p, --provider <provider>",
+        "choose a provider to generate the commit message"
+      )
+        .choices(["openai", "gemini"])
+        .default("gemini")
     );
 
-  command.parse(process.argv);
+  command.parse();
 
   const options = command.opts();
 
-  const excludedFiles = options.exclude ? options.exclude.split(",") : [];
+  if (!options.dryRun) {
+    console.info(
+      `🤖 ${fullName} v${version} is running with ${options.provider} as the AI provider.`
+    );
+  }
+
+  if (options.provider && !["openai", "gemini"].includes(options.provider)) {
+    console.error("Invalid provider. Please choose 'openai' or 'gemini'.");
+    process.exit(1);
+  }
+
+  const excludedFiles = Array.from(
+    new Set(
+      (options.exclude ? options.exclude.split(",") : []).concat(
+        defaultExcludedFiles
+      )
+    )
+  );
 
   const files = await runCommand([
     "git",
@@ -100,7 +129,7 @@ async function main() {
     throw new Error("No files to diff.");
   }
 
-  const gitStagedOutput = await runCommand([
+  let gitStagedOutput = await runCommand([
     "git",
     [
       "diff",
@@ -117,11 +146,13 @@ async function main() {
     throw new Error("No staged changes found.");
   }
 
-  if (options.prompt) {
-    console.log(
+  gitStagedOutput = "```\n" + gitStagedOutput + "\n```";
+
+  if (options.dryRun) {
+    console.info(
       [
-        promptCommand,
-        options.conventionalCommits && "Use conventional commits",
+        prompt,
+        options.conventionalCommits && conventionalCommitsPrompt,
         gitStagedOutput,
         options.message,
       ]
@@ -138,7 +169,7 @@ async function main() {
   if (options.conventionalCommits) {
     messages.push({
       role: "system",
-      content: "Using conventional commits",
+      content: conventionalCommitsPrompt,
     });
   }
 
@@ -154,15 +185,17 @@ async function main() {
     content: gitStagedOutput,
   });
 
-  const chatCompletion = await client.chat.completions.create({
-    messages,
-    model: "gpt-4o-mini",
-    response_format: zodResponseFormat(CommitInfo, "commit"),
-  });
+  const providerChatCompletion =
+    options.provider === "gemini" ? geminiChatCompletion : openAIChatCompletion;
 
-  const commitMsgJson = await JSON.parse(
-    chatCompletion.choices[0].message.content || ""
+  const chatCompletionResponse = await providerChatCompletion(
+    messages,
+    zodResponseFormat(responseObject, "commit")
   );
+
+  const commitMsgJson = JSON.parse(chatCompletionResponse) as z.infer<
+    typeof responseObject
+  >;
 
   if (!commitMsgJson) {
     throw new Error("Error parsing Chat GPT response.");
@@ -171,7 +204,7 @@ async function main() {
   const commitMsg = commitMsgJson.title + "\n\n" + commitMsgJson.description;
 
   console.info(
-    `Proposed Commit:\n------------------------------\n${commitMsg}\n------------------------------`
+    `\nProposed Commit:\n------------------------------\n${commitMsg}\n------------------------------`
   );
 
   const rl = readline.createInterface({
@@ -192,7 +225,7 @@ async function main() {
 
   console.info("Committing message...");
 
-  const psCommit = spawn("git", ["commit", "-m", `${commitMsg}`], {
+  const psCommit = spawn("git", ["commit", "-m", commitMsg], {
     stdio: "inherit",
   });
 
