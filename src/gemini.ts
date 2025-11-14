@@ -1,8 +1,9 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import {
   ChatCompletionMessageParam,
   ResponseFormatJSONSchema,
 } from "openai/resources";
+import { withRetry } from "./utils/withRetry";
 
 export const geminiChatCompletion = async (
   messages: ChatCompletionMessageParam[],
@@ -18,14 +19,16 @@ export const geminiChatCompletion = async (
     apiKey: process.env.GEMINI_API_KEY,
   });
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: messages.map((message) => message.content).join("\n\n"),
-    config: {
-      responseMimeType: "application/json",
-      responseJsonSchema: response_format.json_schema.schema,
-    },
-  });
+  const response = await withRetry(() =>
+    ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: messages.map((message) => message.content).join("\n\n"),
+      config: {
+        responseMimeType: "application/json",
+        responseJsonSchema: response_format.json_schema.schema,
+      },
+    })
+  );
 
   return response?.text || "";
 };
